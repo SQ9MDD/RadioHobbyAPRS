@@ -46,7 +46,7 @@ int tx_delay = 400;                                                       // op�
 // zmienne pomocnicze wewnętrzne oraz konfiguracja sprzętu
 int gps_txd = 4;
 int gps_rxd = 3;
-int sql_port = 5;                                                         // pin SQL z dorji do sprawdzania zajętości kanału
+int sql_port = 5;                                                         // pin SQL do sprawdzania zajętości kanału
 int ptt_port = 2;                                                         // sterowanie nadawaniem
 int voltage_input = A0;                                                   // pomiar napięcia 
 int voltage = 0;                                                          // zmierzone napiecie
@@ -59,7 +59,6 @@ unsigned long time_to_act_led = 0;                                        // pom
 
 TinyGPSPlus gps;                                                          // inicjalizacja tiny gps
 SoftwareSerial gpsSerial(gps_txd, gps_rxd);                               // soft serial for GPS
-
 /*****************************************************************************************/
 
 // ustawianie czasu wysyłki pakietów (do zmiany)
@@ -98,9 +97,7 @@ void make_data(){
     int wysokosc = gps.altitude.meters();
     dtostrf(fabs(convertDegMin(latitude)),7,2,lat_s);
     dtostrf(fabs(convertDegMin(longtitu)),7,2,lon_s);
-
-    //Serial.println("latitude");
-    
+   
     // zmiana jednostek N/S w zaleznosci od lokalizacji
     char n_s[2];
     if(convertDegMin(latitude) >= 0){
@@ -175,7 +172,6 @@ void setup(){
   gpsSerial.begin(9600);                                        // polaczenie do GPS
   delay(1000);                                                  //
   analogReference(INTERNAL);                                    // zmiana punktu odniesienia pomiaru napięć na 1.1V
-  
   
   // konfiguracja, znak, ścieżka, SSID itd.
   QAPRS.init(0,0,callsign, '0', "APZQAP", '0', path);
