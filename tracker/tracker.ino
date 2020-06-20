@@ -28,12 +28,12 @@
 /*****************************************************************************************/
 // zmienne do modyfikacji ustawienia podstawowe trakera
 char callsign[]                     = "SQ9MDD";                           // znak wywoławczy
-char comment[]                      = "test trackera 20200620";                     // komentarz
+char comment[]                      = "test trackera 20200620";           // komentarz
 char path[]                         = "WIDE1-1";                          // sciezka pakietowa
 char symbol_table[]                 = "/";                                // tabela symboli
 char symbol[]                       = "[";                                // symbol domyslnie "[" - jogger
 int ssid                            = 11;                                 // SSID znaku
-int beacon_slow_interval  = 30;                                            // długi interwał wysyłki ramek w minutach default = 30
+int beacon_slow_interval  = 30;                                           // długi interwał wysyłki ramek w minutach default = 30
 int beacon_fast_interval  = 1;                                            // krótki interwał wysyłki ramek w minutach default = 5
 int beacon_slow_speed     = 10;                                           // km/h
 int beacon_fast_speed     = 90;                                           // km/h 
@@ -82,8 +82,7 @@ float convertDegMin(float decDeg){
  return DegMin; 
 }
 
-// obsługa GPS-a tutaj wyciągamy dane: prędkość, wysokość, koordynaty, ilość satelit, itd...
-void make_data(){
+void make_data(){                                                         // obsługa GPS-a tutaj wyciągamy dane: prędkość, wysokość, koordynaty, ilość satelit, itd...
   if(millis() >= time_to_get_gps_data){
     char lat_s[10];
     char lon_s[10];
