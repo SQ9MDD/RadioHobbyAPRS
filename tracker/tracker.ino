@@ -33,15 +33,17 @@ char path[]                         = "WIDE1-1";                          // sci
 char symbol_table[]                 = "/";                                // tabela symboli
 char symbol[]                       = "[";                                // symbol domyslnie "[" - jogger
 int ssid                            = 11;                                 // SSID znaku
-unsigned long beacon_slow_interval  = 1;                                  // długi interwał wysyłki ramek w minutach default = 30
-unsigned long beacon_fast_interval  = 1;                                  // krótki interwał wysyłki ramek w minutach default = 5
+int beacon_slow_interval  = 30;                                            // długi interwał wysyłki ramek w minutach default = 30
+int beacon_fast_interval  = 1;                                            // krótki interwał wysyłki ramek w minutach default = 5
+int beacon_slow_speed     = 10;                                           // km/h
+int beacon_fast_speed     = 90;                                           // km/h 
 unsigned long gps_read_interval     = 5000;                               // msec default 1 sec
 int tx_delay = 400;                                                       // opóznienie pomiedzy załączeniem tx a nadawaniem ramki
 /*****************************************************************************************/
 
-#include <ArduinoQAPRS.h>           // QAPRS Library: https://bitbucket.org/Qyon/arduinoqaprs/
-#include <TinyGPS++.h>              // Tiny GPS Library: https://github.com/mikalhart/TinyGPSPlus
-#include <SoftwareSerial.h>         // Software Serial: https://github.com/lstoll/arduino-libraries/tree/master/SoftwareSerial
+#include <ArduinoQAPRS.h>                                                 // QAPRS Library: https://bitbucket.org/Qyon/arduinoqaprs/
+#include <TinyGPS++.h>                                                    // Tiny GPS Library: https://github.com/mikalhart/TinyGPSPlus
+#include <SoftwareSerial.h>                                               // Software Serial: https://github.com/lstoll/arduino-libraries/tree/master/SoftwareSerial
 
 // zmienne pomocnicze wewnętrzne oraz konfiguracja sprzętu
 int gps_txd = 4;
@@ -51,23 +53,22 @@ int ptt_port = 2;                                                         // ste
 int voltage_input = A0;                                                   // pomiar napięcia 
 int voltage = 0;                                                          // zmierzone napiecie
 int tracker_status = 0;                                                   // status trakera kombinacja uruchomiony / brak fixa / praca
+int speed_kmh = 0;
 char * packet_buffer  = "                                                                         \n";
 unsigned long time_to_send_data = 0;                                      // pomocnicza zmienna do wspóldzielenia czasu
 unsigned long time_to_get_gps_data = 0;                                   // pomocnicza zmienna do współdzielenia czasu
 unsigned long beacon_interval = beacon_fast_interval * 60000;             // pomocnicza zmienna domyślny timing wysyłki pakietów
 unsigned long time_to_act_led = 0;                                        // pomocnicza zmienna czas do zmiany stanu leda
+unsigned long calc;
 
 TinyGPSPlus gps;                                                          // inicjalizacja tiny gps
 SoftwareSerial gpsSerial(gps_txd, gps_rxd);                               // soft serial for GPS
 /*****************************************************************************************/
 
-// ustawianie czasu wysyłki pakietów (do zmiany)
-void set_packet_interval(){
- if(tracker_status < 2){
-    beacon_interval = beacon_slow_interval * 60000;
- }else{
-    beacon_interval = beacon_fast_interval * 60000;
- }  
+void set_packet_interval(){                                               // ustawianie czasu wysyłki pakietów w zalezności od prędkosci
+  int calc = map(speed_kmh,beacon_slow_speed,beacon_fast_speed,beacon_slow_interval,beacon_fast_interval);
+  calc = constrain(calc,beacon_fast_interval,beacon_slow_interval);
+  beacon_interval = calc * 60000;
 }
 
 // konwersja jednostek geograficznych do formatu APRS
@@ -84,21 +85,16 @@ float convertDegMin(float decDeg){
 // obsługa GPS-a tutaj wyciągamy dane: prędkość, wysokość, koordynaty, ilość satelit, itd...
 void make_data(){
   if(millis() >= time_to_get_gps_data){
-    // pomiar napiecia
-    //int v_prefix = voltage / 10;
-    //int v_sufix = voltage % 10; 
     char lat_s[10];
     char lon_s[10];
-    
     float latitude = gps.location.lat();
     float longtitu = gps.location.lng();
-    float speed_knots = gps.speed.knots();
-    Serial.println(speed_knots);
+    speed_kmh = int(gps.speed.knots() * 1.85);
     // float course_deg = gps.course.deg();
     int wysokosc = gps.altitude.meters();
     dtostrf(fabs(convertDegMin(latitude)),7,2,lat_s);
     dtostrf(fabs(convertDegMin(longtitu)),7,2,lon_s);
-   
+
     // zmiana jednostek N/S w zaleznosci od lokalizacji
     char n_s[2];
     if(convertDegMin(latitude) >= 0){
@@ -139,7 +135,6 @@ void make_data(){
    time_to_get_gps_data = millis() + gps_read_interval;
    
    // zmiana czasu wysyłki po przeliczeniu danych z GPS-a
-   // docelowo popracować nad smartbikonem
    set_packet_interval(); 
   }
 }
