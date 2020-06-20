@@ -46,7 +46,7 @@ int tx_delay = 400;                                                       // op�
 // zmienne pomocnicze wewnętrzne oraz konfiguracja sprzętu
 int gps_txd = 4;
 int gps_rxd = 3;
-int sql_port = 12;                                                         // pin SQL do sprawdzania zajętości kanału
+int sql_port = 12;                                                        // pin SQL do sprawdzania zajętości kanału
 int ptt_port = 2;                                                         // sterowanie nadawaniem
 int voltage_input = A0;                                                   // pomiar napięcia 
 int voltage = 0;                                                          // zmierzone napiecie
@@ -92,7 +92,8 @@ void make_data(){
     
     float latitude = gps.location.lat();
     float longtitu = gps.location.lng();
-    // float speed_knots = gps.speed.knots();
+    float speed_knots = gps.speed.knots();
+    Serial.println(speed_knots);
     // float course_deg = gps.course.deg();
     int wysokosc = gps.altitude.meters();
     dtostrf(fabs(convertDegMin(latitude)),7,2,lat_s);
@@ -146,16 +147,14 @@ void make_data(){
 // obsługa wysyłki danych
 void send_aprs_packet(){
   if(millis() >= time_to_send_data){    
-     digitalWrite(ptt_port,LOW);                        // ON PTT
-     //delay(tx_delay);                                   // wait for transceiver to be ready
-     //noInterrupts();
-     gpsSerial.end();                                   // disable software seriall interrupts before sending frame
-     QAPRS.sendData(packet_buffer);                     // wysyłka pakietu
-     gpsSerial.begin(9600);                             // enable software seriall again
-     //interrupts();
-     Serial.println(packet_buffer);
-     digitalWrite(ptt_port,HIGH);                       // OFF PTT
-     delay(10);     
+     digitalWrite(ptt_port,LOW);                                          // ON PTT
+     delay(tx_delay);                                                     // wait for transceiver to be ready
+     gpsSerial.end();                                                     // disable software seriall interrupts before sending frame
+     QAPRS.sendData(packet_buffer);                                       // wysyłka pakietu
+     gpsSerial.begin(9600);                                               // enable software seriall again
+     Serial.println(packet_buffer);                                       // debug
+     digitalWrite(ptt_port,HIGH);                                         // OFF PTT
+     delay(10);                                                           // 
      time_to_send_data = millis() + beacon_interval; 
   }
 }
@@ -163,23 +162,20 @@ void send_aprs_packet(){
 /*****************************************************************************************/
 // setup
 void setup(){   
-  // komunikacja z peryferiami
-  Serial.begin(115200);                                         // serial
-  gpsSerial.begin(9600);                                        // polaczenie do GPS
-  delay(1000);                                                  //
-  analogReference(INTERNAL);                                    // zmiana punktu odniesienia pomiaru napięć na 1.1V
+  Serial.begin(115200);                                                   // serial
+  gpsSerial.begin(9600);                                                  // polaczenie do GPS
+  delay(1000);                                                            //
+  analogReference(INTERNAL);                                              // zmiana punktu odniesienia pomiaru napięć na 1.1V
   
-  // konfiguracja, znak, ścieżka, SSID itd.
-  QAPRS.init(sql_port,ptt_port,callsign, '0', "APZQAP", '0', path);
-  QAPRS.setFromAddress(callsign, ssid);                         //ustawiamy znak i SSID
-  QAPRS.setRelays(path);                                        //ustawiamy ścieżkę  
-  sprintf(packet_buffer,">NO FIX");                             //domyślny pakiet po starcie
-
-  Serial.println("tracker ready...");
+  QAPRS.init(sql_port,ptt_port,callsign, '0', "APZQAP", '0', path);       // inicjalizacja QAPRS
+  QAPRS.setFromAddress(callsign, ssid);                                   // ustawiamy znak i SSID
+  QAPRS.setRelays(path);                                                  // ustawiamy ścieżkę  
+  sprintf(packet_buffer,">NO FIX");                                       // domyślny pakiet po starcie
 }
 
 // pętla główna
 void loop(){
+  // read data from GPS
   if(gpsSerial.available() > 0){
       //Serial.write(gpsSerial.read());
       if (gps.encode(gpsSerial.read())){
@@ -187,10 +183,8 @@ void loop(){
       }    
   }
 
-  // wysyłka pakietu
-
-  send_aprs_packet();
-       
+  // sprawdz czy mozna wyslac pakiet
+  send_aprs_packet();       
 }
 /*****************************************************************************************/
 //E.O.F.
