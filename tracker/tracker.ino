@@ -85,8 +85,8 @@ float convertDegMin(float decDeg){
 void make_data(){
   if(millis() >= time_to_get_gps_data){
     // pomiar napiecia
-    int v_prefix = voltage / 10;
-    int v_sufix = voltage % 10; 
+    //int v_prefix = voltage / 10;
+    //int v_sufix = voltage % 10; 
     char lat_s[10];
     char lon_s[10];
     
@@ -137,11 +137,11 @@ void make_data(){
         tracker_status = 2;
       }else{
         tracker_status = 1;
-        sprintf(packet_buffer,">U=%01u.%01uV NO FIX",v_prefix,v_sufix); 
+        sprintf(packet_buffer,">NO FIX"); 
       }
     }else{
       tracker_status = 1;
-      sprintf(packet_buffer,">U=%01u.%01uV NO FIX",v_prefix,v_sufix);      
+      sprintf(packet_buffer,">NO FIX");      
     }    
    time_to_get_gps_data = millis() + gps_read_interval;
    
