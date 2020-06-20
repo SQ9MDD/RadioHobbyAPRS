@@ -28,7 +28,7 @@
 /*****************************************************************************************/
 // zmienne do modyfikacji ustawienia podstawowe trakera
 char callsign[]                     = "SQ9MDD";                           // znak wywoławczy
-char comment[]                      = "tracker test";                     // komentarz
+char comment[]                      = "test trackera 20200620";                     // komentarz
 char path[]                         = "WIDE1-1";                          // sciezka pakietowa
 char symbol_table[]                 = "/";                                // tabela symboli
 char symbol[]                       = "[";                                // symbol domyslnie "[" - jogger
@@ -46,7 +46,7 @@ int tx_delay = 400;                                                       // op�
 // zmienne pomocnicze wewnętrzne oraz konfiguracja sprzętu
 int gps_txd = 4;
 int gps_rxd = 3;
-int sql_port = 5;                                                         // pin SQL do sprawdzania zajętości kanału
+int sql_port = 12;                                                         // pin SQL do sprawdzania zajętości kanału
 int ptt_port = 2;                                                         // sterowanie nadawaniem
 int voltage_input = A0;                                                   // pomiar napięcia 
 int voltage = 0;                                                          // zmierzone napiecie
@@ -118,29 +118,21 @@ void make_data(){
     
     // wyciągamy ilość satelit
     int sat_number = gps.satellites.value();
-    
-    // przygotowanie pakietu
-    if(longtitu < 10){
-      //sprintf(packet_buffer,"!%s%s%s00%s%s%s%s SAT=%01u U=%01u.%01uV Alt=%um",lat_s,n_s,symbol_table,lon_s,w_e,symbol,comment,sat_number,v_prefix,v_sufix,wysokosc);  
-      sprintf(packet_buffer,"!%s%s%s00%s%s%s%s",lat_s,n_s,symbol_table,lon_s,w_e,symbol,comment);      
-    }else if(longtitu >= 10 && longtitu < 100){
-      //sprintf(packet_buffer,"!%s%s%s0%s%s%s%s SAT=%01u U=%01u.%01uV Alt=%um",lat_s,n_s,symbol_table,lon_s,w_e,symbol,comment,sat_number,v_prefix,v_sufix,wysokosc);
-      sprintf(packet_buffer,"!%s%s%s0%s%s%s%s",lat_s,n_s,symbol_table,lon_s,w_e,symbol,comment);
-    }else{
-      //sprintf(packet_buffer,"!%s%s%s%s%s%%s sSAT=%01u U=%01u.%01uV Alt=%um",lat_s,n_s,symbol_table,lon_s,w_e,symbol,comment,sat_number,v_prefix,v_sufix,wysokosc);
-      sprintf(packet_buffer,"!%s%s%s%s%s%%s",lat_s,n_s,symbol_table,lon_s,w_e,symbol,comment);
-    }
-    
+
     // flaga fixa nie jest zdejmowana po jego utracie trzeba coś z tym zrobić
-    if (gps.location.isValid()){ 
-      if(sat_number > 2){   
-        tracker_status = 2;
+    if (gps.location.isValid() && sat_number > 2){     
+      // przygotowanie pakietu
+      if(longtitu < 10){
+        //sprintf(packet_buffer,"!%s%s%s00%s%s%s%s SAT=%01u U=%01u.%01uV Alt=%um",lat_s,n_s,symbol_table,lon_s,w_e,symbol,comment,sat_number,v_prefix,v_sufix,wysokosc);  
+        sprintf(packet_buffer,"!%s%s%s00%s%s%s%s",lat_s,n_s,symbol_table,lon_s,w_e,symbol,comment);      
+      }else if(longtitu >= 10 && longtitu < 100){
+        //sprintf(packet_buffer,"!%s%s%s0%s%s%s%s SAT=%01u U=%01u.%01uV Alt=%um",lat_s,n_s,symbol_table,lon_s,w_e,symbol,comment,sat_number,v_prefix,v_sufix,wysokosc);
+        sprintf(packet_buffer,"!%s%s%s0%s%s%s%s",lat_s,n_s,symbol_table,lon_s,w_e,symbol,comment);
       }else{
-        tracker_status = 1;
-        sprintf(packet_buffer,">NO FIX"); 
+        //sprintf(packet_buffer,"!%s%s%s%s%s%%s sSAT=%01u U=%01u.%01uV Alt=%um",lat_s,n_s,symbol_table,lon_s,w_e,symbol,comment,sat_number,v_prefix,v_sufix,wysokosc);
+        sprintf(packet_buffer,"!%s%s%s%s%s%%s",lat_s,n_s,symbol_table,lon_s,w_e,symbol,comment);
       }
     }else{
-      tracker_status = 1;
       sprintf(packet_buffer,">NO FIX");      
     }    
    time_to_get_gps_data = millis() + gps_read_interval;
@@ -155,8 +147,12 @@ void make_data(){
 void send_aprs_packet(){
   if(millis() >= time_to_send_data){    
      digitalWrite(ptt_port,LOW);                        // ON PTT
-     delay(tx_delay);                                   // wait for transceiver to be ready
+     //delay(tx_delay);                                   // wait for transceiver to be ready
+     //noInterrupts();
+     gpsSerial.end();                                   // disable software seriall interrupts before sending frame
      QAPRS.sendData(packet_buffer);                     // wysyłka pakietu
+     gpsSerial.begin(9600);                             // enable software seriall again
+     //interrupts();
      Serial.println(packet_buffer);
      digitalWrite(ptt_port,HIGH);                       // OFF PTT
      delay(10);     
@@ -174,7 +170,7 @@ void setup(){
   analogReference(INTERNAL);                                    // zmiana punktu odniesienia pomiaru napięć na 1.1V
   
   // konfiguracja, znak, ścieżka, SSID itd.
-  QAPRS.init(0,0,callsign, '0', "APZQAP", '0', path);
+  QAPRS.init(sql_port,ptt_port,callsign, '0', "APZQAP", '0', path);
   QAPRS.setFromAddress(callsign, ssid);                         //ustawiamy znak i SSID
   QAPRS.setRelays(path);                                        //ustawiamy ścieżkę  
   sprintf(packet_buffer,">NO FIX");                             //domyślny pakiet po starcie
@@ -192,7 +188,9 @@ void loop(){
   }
 
   // wysyłka pakietu
-  send_aprs_packet();     
+
+  send_aprs_packet();
+       
 }
 /*****************************************************************************************/
 //E.O.F.
