@@ -1,5 +1,6 @@
 # RadioHobbyAPRS
 Radio Hobby APRS Project
+PCB and  sets: https://radiohobby.pl/
 
 ## Contains:
 - Radio Hobby APRS Tracker
