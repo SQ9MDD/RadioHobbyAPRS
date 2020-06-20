@@ -33,15 +33,15 @@ char path[]                         = "WIDE1-1";                          // sci
 char symbol_table[]                 = "/";                                // tabela symboli
 char symbol[]                       = "[";                                // symbol domyslnie "[" - jogger
 int ssid                            = 11;                                 // SSID znaku
-unsigned long beacon_slow_interval  = 1;                                 // długi interwał wysyłki ramek w minutach default = 30
+unsigned long beacon_slow_interval  = 1;                                  // długi interwał wysyłki ramek w minutach default = 30
 unsigned long beacon_fast_interval  = 1;                                  // krótki interwał wysyłki ramek w minutach default = 5
 unsigned long gps_read_interval     = 5000;                               // msec default 1 sec
 int tx_delay = 400;                                                       // opóznienie pomiedzy załączeniem tx a nadawaniem ramki
 /*****************************************************************************************/
 
-#include <ArduinoQAPRS.h>        // QAPRS Library: https://bitbucket.org/Qyon/arduinoqaprs/
-#include <TinyGPS++.h>           // Tiny GPS Library: https://github.com/mikalhart/TinyGPSPlus
-#include <SoftwareSerial.h>      // Software Serial: https://github.com/lstoll/arduino-libraries/tree/master/SoftwareSerial
+#include <ArduinoQAPRS.h>           // QAPRS Library: https://bitbucket.org/Qyon/arduinoqaprs/
+#include <TinyGPS++.h>              // Tiny GPS Library: https://github.com/mikalhart/TinyGPSPlus
+#include <SoftwareSerial.h>         // Software Serial: https://github.com/lstoll/arduino-libraries/tree/master/SoftwareSerial
 
 // zmienne pomocnicze wewnętrzne oraz konfiguracja sprzętu
 int gps_txd = 4;
