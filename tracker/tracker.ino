@@ -33,8 +33,8 @@ char path[]                         = "WIDE1-1";                          // sci
 char symbol_table[]                 = "/";                                // tabela symboli
 char symbol[]                       = "[";                                // symbol domyslnie "[" - jogger
 int ssid                            = 11;                                 // SSID znaku
-int beacon_slow_interval  = 30;                                           // długi interwał wysyłki ramek w minutach default = 30
-int beacon_fast_interval  = 1;                                            // krótki interwał wysyłki ramek w minutach default = 5
+int beacon_slow_interval  = 10;                                           // długi interwał wysyłki ramek w minutach default = 30
+int beacon_fast_interval  = 1;                                            // krótki interwał wysyłki ramek w minutach default = 1 range 1 - 60
 int beacon_slow_speed     = 10;                                           // km/h
 int beacon_fast_speed     = 90;                                           // km/h 
 unsigned long gps_read_interval     = 5000;                               // msec default 1 sec
