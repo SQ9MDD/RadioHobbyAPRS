@@ -86,10 +86,10 @@ void make_data(){                                                         // obs
   if(millis() >= time_to_get_gps_data){
     char lat_s[10];
     char lon_s[10];
+    speed_kmh = int(gps.speed.kmph());
     float latitude = gps.location.lat();
     float longtitu = gps.location.lng();
-    int speed_knt = int(gps.speed.knots());
-    speed_kmh = int(gps.speed.kmph());
+    int speed_knt = int(gps.speed.knots());    
     int course_deg = int(gps.course.deg());
     int wysokosc = gps.altitude.meters();
     dtostrf(fabs(convertDegMin(latitude)),7,2,lat_s);
@@ -111,11 +111,10 @@ void make_data(){                                                         // obs
     }else if(convertDegMin(longtitu) < 0){
       w_e[0] = 'W';
     }
-    w_e[1] = 0;
+    w_e[1] = 0;    
     
     // wyciągamy ilość satelit
     int sat_number = gps.satellites.value();
-
     // flaga fixa nie jest zdejmowana po jego utracie trzeba coś z tym zrobić
     if (gps.location.isValid() && sat_number > 2){     
       // przygotowanie pakietu
@@ -131,9 +130,8 @@ void make_data(){                                                         // obs
       }
     }else{
       sprintf(packet_buffer,">NO FIX");      
-    }    
+    }
    time_to_get_gps_data = millis() + gps_read_interval;
-   
    // zmiana czasu wysyłki po przeliczeniu danych z GPS-a
    set_packet_interval(); 
    //debug
@@ -158,12 +156,11 @@ void send_aprs_packet(){
 
 /*****************************************************************************************/
 // setup
-void setup(){   
+void setup(){  
+  analogReference(INTERNAL);                                              // zmiana punktu odniesienia pomiaru napięć na 1.1V 
   Serial.begin(115200);                                                   // serial
   gpsSerial.begin(9600);                                                  // polaczenie do GPS
   delay(1000);                                                            //
-  analogReference(INTERNAL);                                              // zmiana punktu odniesienia pomiaru napięć na 1.1V
-  
   QAPRS.init(sql_port,ptt_port,callsign, '0', "APZQAP", '0', path);       // inicjalizacja QAPRS
   QAPRS.setFromAddress(callsign, ssid);                                   // ustawiamy znak i SSID
   QAPRS.setRelays(path);                                                  // ustawiamy ścieżkę  
