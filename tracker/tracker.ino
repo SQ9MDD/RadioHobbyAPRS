@@ -88,8 +88,9 @@ void make_data(){                                                         // obs
     char lon_s[10];
     float latitude = gps.location.lat();
     float longtitu = gps.location.lng();
-    speed_kmh = int(gps.speed.knots() * 1.85);
-    // float course_deg = gps.course.deg();
+    int speed_knt = int(gps.speed.knots());
+    speed_kmh = int(gps.speed.kmph());
+    int course_deg = int(gps.course.deg());
     int wysokosc = gps.altitude.meters();
     dtostrf(fabs(convertDegMin(latitude)),7,2,lat_s);
     dtostrf(fabs(convertDegMin(longtitu)),7,2,lon_s);
@@ -120,13 +121,13 @@ void make_data(){                                                         // obs
       // przygotowanie pakietu
       if(longtitu < 10){
         //sprintf(packet_buffer,"!%s%s%s00%s%s%s%s SAT=%01u U=%01u.%01uV Alt=%um",lat_s,n_s,symbol_table,lon_s,w_e,symbol,comment,sat_number,v_prefix,v_sufix,wysokosc);  
-        sprintf(packet_buffer,"!%s%s%s00%s%s%s%s",lat_s,n_s,symbol_table,lon_s,w_e,symbol,comment);      
+        sprintf(packet_buffer,"!%s%s%s00%s%s%s%03u/%03u%s",lat_s,n_s,symbol_table,lon_s,w_e,symbol,course_deg,speed_knt,comment);      
       }else if(longtitu >= 10 && longtitu < 100){
         //sprintf(packet_buffer,"!%s%s%s0%s%s%s%s SAT=%01u U=%01u.%01uV Alt=%um",lat_s,n_s,symbol_table,lon_s,w_e,symbol,comment,sat_number,v_prefix,v_sufix,wysokosc);
-        sprintf(packet_buffer,"!%s%s%s0%s%s%s%s",lat_s,n_s,symbol_table,lon_s,w_e,symbol,comment);
+        sprintf(packet_buffer,"!%s%s%s0%s%s%s%03u/%03u%s",lat_s,n_s,symbol_table,lon_s,w_e,symbol,course_deg,speed_knt,comment);
       }else{
         //sprintf(packet_buffer,"!%s%s%s%s%s%%s sSAT=%01u U=%01u.%01uV Alt=%um",lat_s,n_s,symbol_table,lon_s,w_e,symbol,comment,sat_number,v_prefix,v_sufix,wysokosc);
-        sprintf(packet_buffer,"!%s%s%s%s%s%%s",lat_s,n_s,symbol_table,lon_s,w_e,symbol,comment);
+        sprintf(packet_buffer,"!%s%s%s%s%s%03u/%03u%s",lat_s,n_s,symbol_table,lon_s,w_e,symbol,course_deg,speed_knt,comment);
       }
     }else{
       sprintf(packet_buffer,">NO FIX");      
@@ -135,10 +136,12 @@ void make_data(){                                                         // obs
    
    // zmiana czasu wysyłki po przeliczeniu danych z GPS-a
    set_packet_interval(); 
-  }
+   //debug
+   //Serial.println(packet_buffer);
+  }  
 }
 
-// obsługa wysyłki danych
+// obsługa wysyłki danych 
 void send_aprs_packet(){
   if(millis() >= time_to_send_data){    
      digitalWrite(ptt_port,LOW);                                          // ON PTT
