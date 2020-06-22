@@ -5,7 +5,7 @@ PCB and  sets: https://radiohobby.pl/
 
 ## Contains:
 - Radio Hobby APRS Tracker
-- ~~Radio Hobby APRS Weather Station~~
+- Radio Hobby APRS Weather Station
 
 ## Thanks for library:
 - QAPRS Library: https://bitbucket.org/Qyon/arduinoqaprs/
