@@ -1,5 +1,5 @@
 /*
- Radio Hobby APRS Tracker
+ Radio Hobby APRS Weather Station
  Bazuje na bibliotece QAPRS
  http://sq9mdd.qrz.pl
  
