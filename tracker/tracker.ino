@@ -27,10 +27,10 @@
 */
 /*****************************************************************************************/
 // zmienne do modyfikacji ustawienia podstawowe trakera
-char callsign[]                     = "SQ9MDD";                           // znak wywoławczy
+char callsign[]                     = "SQ9MDD";                           // CALLSIGN
 char comment[]                      = "test trackera";                    // comment max 46 chars
-char path[]                         = "WIDE1-1";                          // sciezka pakietowa
-char symbol_table[]                 = "/";                                // tabela symboli
+char path[]                         = "WIDE1-1";                          // packet path
+char symbol_table[]                 = "/";                                // symbol table
 char symbol[]                       = "[";                                // symbol domyslnie "[" - jogger
 int ssid                            = 11;                                 // SSID znaku
 int beacon_slow_interval            = 20;                                 // długi interwał wysyłki ramek w minutach default = 30
@@ -47,23 +47,23 @@ boolean show_voltage                = false;                              // tru
 #include <TinyGPS++.h>                                                    // Tiny GPS Library: https://github.com/mikalhart/TinyGPSPlus
 #include <SoftwareSerial.h>                                               // Software Serial: https://github.com/lstoll/arduino-libraries/tree/master/SoftwareSerial
 
+#define gps_txd  4                                                        //
+#define gps_rxd  3                                                        //
+#define sql_port 12                                                       // pin SQL do sprawdzania zajętości kanału
+#define ptt_port 2                                                        // sterowanie nadawaniem
+#define voltage_input A0 
+
 // zmienne pomocnicze wewnętrzne oraz konfiguracja sprzętu
 boolean fix_flag = false;
-#define gps_txd  4
-int gps_rxd = 3;
-int sql_port = 12;                                                        // pin SQL do sprawdzania zajętości kanału
-int ptt_port = 2;                                                         // sterowanie nadawaniem
-int voltage_input = A0;                                                   // pomiar napięcia 
 int voltage = 0;                                                          // zmierzone napiecie
-int tracker_status = 0;                                                   // status trakera kombinacja uruchomiony / brak fixa / praca
 int speed_kmh = 0;
 char * packet_buffer  = "                                                                         \n";
-unsigned long time_to_get_gps_data = 0;                                   // pomocnicza zmienna do współdzielenia czasu
-unsigned long beacon_interval = 0;                                        // pomocnicza zmienna domyślny timing wysyłki pakietów
-unsigned long time_to_act_led = 0;                                        // pomocnicza zmienna czas do zmiany stanu leda
-unsigned long calc;
-unsigned long sb_time = 0;
-unsigned long last_beacon = 0;
+unsigned long time_to_get_gps_data = 0;                                   // 
+unsigned long beacon_interval = 0;                                        // 
+unsigned long time_to_act_led = 0;                                        // 
+unsigned long calc;                                                       //
+unsigned long sb_time = 0;                                                //
+unsigned long last_beacon = 0;                                            //
 
 TinyGPSPlus gps;                                                          // inicjalizacja tiny gps
 SoftwareSerial gpsSerial(gps_txd, gps_rxd);                               // soft serial for GPS
@@ -75,9 +75,13 @@ void set_packet_interval(){                                               // ust
     calc = constrain(calc,beacon_fast_interval,beacon_slow_interval);
     beacon_interval = calc * 60000;
     sb_time = millis() + 1000;
-    //Serial.print(millis()); 
-    //Serial.print("-");
-    //Serial.println(beacon_interval);
+    /* DEBUG
+    Serial.print(millis()); 
+    Serial.print("-");
+    Serial.print(last_beacon);
+    Serial.print("-");
+    Serial.println(last_beacon + beacon_interval);
+    */
   }
 }
 
@@ -127,9 +131,9 @@ void make_data(){                                                         //
     
     int sat_number = gps.satellites.value();                              // get number of satelites
     if (gps.location.isValid() && sat_number > 2){                        // if position is valid and sat number is ok make proper data
-      if (fix_flag = false){
+      if (fix_flag == false){                                             // after bot and fix 
         fix_flag = true;
-        beacon_interval =0;
+        beacon_interval = 0;
       }
       // przygotowanie pakietu
       if(longtitu < 10){        
@@ -138,23 +142,22 @@ void make_data(){                                                         //
         sprintf(packet_buffer,"!%s%s%s0%s%s%s%03u/%03u%s",lat_s,n_s,symbol_table,lon_s,w_e,symbol,course_deg,speed_knt,comment);
       }else{        
         sprintf(packet_buffer,"!%s%s%s%s%s%03u/%03u%s",lat_s,n_s,symbol_table,lon_s,w_e,symbol,course_deg,speed_knt,comment);
-      }
-      if(show_sat_number){
-        char * tmp = "        ";
-        sprintf(tmp," sat: %u",sat_number);
-        strcat(packet_buffer,tmp);        
-      }
-      if(show_voltage){
-        char * tmp = "         ";
-        char volt[11];
-        dtostrf(fabs(voltage),2,1,volt);
-        sprintf(tmp," bat: %sV",volt);
-        strcat(packet_buffer,tmp);        
-      }      
+      }     
     }else{
       sprintf(packet_buffer,">NO FIX");            
     }
-    
+    if(show_sat_number){
+      char * tmp = "        ";
+      sprintf(tmp," sat: %u",sat_number);
+      strcat(packet_buffer,tmp);        
+    }
+    if(show_voltage){
+      char * tmp = "         ";
+      char volt[11];
+      dtostrf(fabs(voltage),2,1,volt);
+      sprintf(tmp," bat: %sV",volt);
+      strcat(packet_buffer,tmp);        
+    }     
    time_to_get_gps_data = millis() + gps_read_interval;
    //debug
    //Serial.println(packet_buffer);
@@ -185,7 +188,7 @@ void setup(){
   QAPRS.init(sql_port,ptt_port,callsign, '0', "APZQAP", '0', path);       // inicjalizacja QAPRS
   QAPRS.setFromAddress(callsign, ssid);                                   // set callsign and SSID
   QAPRS.setRelays(path);                                                  // set packet path  
-  sprintf(packet_buffer,">NO FIX");                                       // set status after boot
+  sprintf(packet_buffer,">RESTART");                                       // set status after boot
 }
 
 // pętla główna
