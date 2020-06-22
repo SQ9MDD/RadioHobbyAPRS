@@ -33,10 +33,10 @@ char path[]                         = "WIDE1-1";                          // sci
 char symbol_table[]                 = "/";                                // tabela symboli
 char symbol[]                       = "[";                                // symbol domyslnie "[" - jogger
 int ssid                            = 11;                                 // SSID znaku
-int beacon_slow_interval            = 2;                                 // długi interwał wysyłki ramek w minutach default = 30
+int beacon_slow_interval            = 20;                                 // długi interwał wysyłki ramek w minutach default = 30
 int beacon_fast_interval            = 1;                                  // krótki interwał wysyłki ramek w minutach default = 1 range 1 - 60
 int beacon_slow_speed               = 10;                                 // km/h
-int beacon_fast_speed               = 90;                                 // km/h 
+int beacon_fast_speed               = 80;                                 // km/h 
 unsigned long gps_read_interval     = 5000;                               // msec default 1 sec
 int tx_delay = 400;                                                       // opóznienie pomiedzy załączeniem tx a nadawaniem ramki
 boolean show_sat_number             = true;                               // true/false shows sat number in comment
@@ -48,6 +48,7 @@ boolean show_voltage                = false;                              // tru
 #include <SoftwareSerial.h>                                               // Software Serial: https://github.com/lstoll/arduino-libraries/tree/master/SoftwareSerial
 
 // zmienne pomocnicze wewnętrzne oraz konfiguracja sprzętu
+boolean fix_flag = false;
 int gps_txd = 4;
 int gps_rxd = 3;
 int sql_port = 12;                                                        // pin SQL do sprawdzania zajętości kanału
@@ -75,6 +76,9 @@ void set_packet_interval(){                                               // ust
     calc = constrain(calc,beacon_fast_interval,beacon_slow_interval);
     beacon_interval = calc * 60000;
     sb_time = millis() + 1000;
+    Serial.print(millis()); 
+    Serial.print("-");
+    Serial.println(beacon_interval);
   }
 }
 
@@ -124,6 +128,10 @@ void make_data(){                                                         //
     
     int sat_number = gps.satellites.value();                              // get number of satelites
     if (gps.location.isValid() && sat_number > 2){                        // if position is valid and sat number is ok make proper data
+      if (fix_flag = false){
+        fix_flag = true;
+        beacon_interval =0;
+      }
       // przygotowanie pakietu
       if(longtitu < 10){        
         sprintf(packet_buffer,"!%s%s%s00%s%s%s%03u/%03u%s",lat_s,n_s,symbol_table,lon_s,w_e,symbol,course_deg,speed_knt,comment);      
