@@ -33,13 +33,13 @@ char path[]                         = "WIDE1-1";                          // sci
 char symbol_table[]                 = "/";                                // tabela symboli
 char symbol[]                       = "[";                                // symbol domyslnie "[" - jogger
 int ssid                            = 11;                                 // SSID znaku
-int beacon_slow_interval            = 10;                                 // długi interwał wysyłki ramek w minutach default = 30
+int beacon_slow_interval            = 2;                                 // długi interwał wysyłki ramek w minutach default = 30
 int beacon_fast_interval            = 1;                                  // krótki interwał wysyłki ramek w minutach default = 1 range 1 - 60
 int beacon_slow_speed               = 10;                                 // km/h
 int beacon_fast_speed               = 90;                                 // km/h 
 unsigned long gps_read_interval     = 5000;                               // msec default 1 sec
 int tx_delay = 400;                                                       // opóznienie pomiedzy załączeniem tx a nadawaniem ramki
-boolean show_sat_number             = false;                              // true/false shows sat number in comment
+boolean show_sat_number             = true;                               // true/false shows sat number in comment
 boolean show_voltage                = false;                              // true/false shows battery voltage
 /*****************************************************************************************/
 
@@ -57,20 +57,25 @@ int voltage = 0;                                                          // zmi
 int tracker_status = 0;                                                   // status trakera kombinacja uruchomiony / brak fixa / praca
 int speed_kmh = 0;
 char * packet_buffer  = "                                                                         \n";
-unsigned long time_to_send_data = 0;                                      // pomocnicza zmienna do wspóldzielenia czasu
+//unsigned long time_to_send_data = 0;                                      // pomocnicza zmienna do wspóldzielenia czasu
 unsigned long time_to_get_gps_data = 0;                                   // pomocnicza zmienna do współdzielenia czasu
-unsigned long beacon_interval = beacon_fast_interval * 60000;             // pomocnicza zmienna domyślny timing wysyłki pakietów
+unsigned long beacon_interval = 0;                                        // pomocnicza zmienna domyślny timing wysyłki pakietów
 unsigned long time_to_act_led = 0;                                        // pomocnicza zmienna czas do zmiany stanu leda
 unsigned long calc;
+unsigned long sb_time = 0;
+unsigned long last_beacon = 0;
 
 TinyGPSPlus gps;                                                          // inicjalizacja tiny gps
 SoftwareSerial gpsSerial(gps_txd, gps_rxd);                               // soft serial for GPS
 /*****************************************************************************************/
 
 void set_packet_interval(){                                               // ustawianie czasu wysyłki pakietów w zalezności od prędkosci
-  int calc = map(speed_kmh,beacon_slow_speed,beacon_fast_speed,beacon_slow_interval,beacon_fast_interval);
-  calc = constrain(calc,beacon_fast_interval,beacon_slow_interval);
-  beacon_interval = calc * 60000;
+  if(millis() >= sb_time){
+    int calc = map(speed_kmh,beacon_slow_speed,beacon_fast_speed,beacon_slow_interval,beacon_fast_interval);
+    calc = constrain(calc,beacon_fast_interval,beacon_slow_interval);
+    beacon_interval = calc * 60000;
+    sb_time = millis() + 1000;
+  }
 }
 
 // konwersja jednostek geograficznych do formatu APRS
@@ -142,8 +147,8 @@ void make_data(){                                                         //
     }else{
       sprintf(packet_buffer,">NO FIX");            
     }
+    
    time_to_get_gps_data = millis() + gps_read_interval;
-   set_packet_interval(); 
    //debug
    //Serial.println(packet_buffer);
   }  
@@ -151,16 +156,16 @@ void make_data(){                                                         //
 
 // obsługa wysyłki danych 
 void send_aprs_packet(){
-  if(millis() >= time_to_send_data){    
+  if(millis() >= (last_beacon + beacon_interval)){ 
      digitalWrite(ptt_port,LOW);                                          // ON PTT
      delay(tx_delay);                                                     // wait for transceiver to be ready
      gpsSerial.end();                                                     // disable software seriall interrupts before sending frame
      QAPRS.sendData(packet_buffer);                                       // wysyłka pakietu
      gpsSerial.begin(9600);                                               // enable software seriall again
-     Serial.println(packet_buffer);                                       // debug
+     Serial.print(packet_buffer);                                       // debug
      digitalWrite(ptt_port,HIGH);                                         // OFF PTT
      delay(10);                                                           // 
-     time_to_send_data = millis() + beacon_interval; 
+     last_beacon = millis(); 
   }
 }
 
@@ -182,12 +187,13 @@ void loop(){
   if(gpsSerial.available() > 0){
       //Serial.write(gpsSerial.read());
       if (gps.encode(gpsSerial.read())){
-        make_data();            
+        make_data();                  
       }    
   }
-
   // sprawdz czy mozna wyslac pakiet
-  send_aprs_packet();       
+  send_aprs_packet(); 
+  set_packet_interval();
+        
 }
 /*****************************************************************************************/
 //E.O.F.
