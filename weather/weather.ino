@@ -40,10 +40,10 @@
 /*****************************************************************************************/
 // zmienne do modyfikacji ustawienia podstawowe trakera
 char callsign[]                     = "SQ9MDD";                           // CALLSIGN
-char latitude[]                     = "5215.00N";
-char longtitude[]                   = "02055.61E";
-int above_sea_lvl                   = 125;
-char comment[]                      = " test pogodynki";                    // comment max 46 chars
+char latitude[]                     = "5215.00N";                         // APRS format 
+char longtitude[]                   = "02055.61E";                        // APRS format 
+int above_sea_lvl                   = 125;                                // meeters above sea lvl
+char comment[]                      = " test pogodynki";                  // comment max 46 chars
 char path[]                         = "WIDE1-1";                          // packet path
 int ssid                            = 11;                                 // SSID znaku
 int beacon_interval                 = 10;                                 // default 10m
@@ -69,27 +69,25 @@ unsigned long time_to_send = 0;
 
 /*****************************************************************************************/
 
-// obsługa wysyłki danych 
+// prepare and send data 
 void send_aprs_packet(){
   if(millis() >= time_to_send){
     float tempC = bme.readTemperature();
-    int tempF = tempC*9/5+32;
+    int tempF = tempC * 9 / 5 + 32;
     int humi = bme.readHumidity();
     if(humi == 100){
       humi = 0; 
     }
     float baroR = bme.readPressure() / 100.0F;
-    int baro = int(baroR + (above_sea_lvl * 0.10933))*10;
+    int baro = int(baroR + (above_sea_lvl * 0.10933)) * 10;
     sprintf(packet_buffer,"!%s/%s_.../...g...t%03uh%02ub%05uaaDu%s",latitude,longtitude,tempF,humi,baro,comment);
-    
-     digitalWrite(ptt_port,LOW);                                          // ON PTT
-     delay(tx_delay);                                                     // wait for transceiver to be ready
-     QAPRS.sendData(packet_buffer);                                       // wysyłka pakietu
-     //gpsSerial.begin(9600);                                               // enable software seriall again
-     Serial.print(packet_buffer);                                       // debug
-     digitalWrite(ptt_port,HIGH);                                         // OFF PTT
-     delay(10);                                                           // 
-     time_to_send = millis() + (beacon_interval * 60000);
+    digitalWrite(ptt_port,LOW);                                          // ON PTT
+    delay(tx_delay);                                                     // wait for transceiver to be ready
+    QAPRS.sendData(packet_buffer);                                       // wysyłka pakietu
+    Serial.print(packet_buffer);                                         // debug
+    digitalWrite(ptt_port,HIGH);                                         // OFF PTT
+    delay(10);                                                           // 
+    time_to_send = millis() + (beacon_interval * 60000);
   }
 }
 
@@ -110,14 +108,6 @@ void setup(){
 
 // pętla główna
 void loop(){
-  delay(1000);
-  //Serial.print("WAAPS300");
-  //Serial.print("*");
-  //Serial.print(bme.readTemperature());
-  //Serial.print("*");
-  //Serial.print(bme.readPressure() / 100.0F);
-  //Serial.print("*");
-  //Serial.print(bme.readHumidity());
   send_aprs_packet();        
 }
 /*****************************************************************************************/
