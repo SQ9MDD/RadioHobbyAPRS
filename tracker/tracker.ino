@@ -49,7 +49,7 @@ boolean show_voltage                = false;                              // tru
 
 // zmienne pomocnicze wewnętrzne oraz konfiguracja sprzętu
 boolean fix_flag = false;
-int gps_txd = 4;
+#define gps_txd  4
 int gps_rxd = 3;
 int sql_port = 12;                                                        // pin SQL do sprawdzania zajętości kanału
 int ptt_port = 2;                                                         // sterowanie nadawaniem
@@ -58,7 +58,6 @@ int voltage = 0;                                                          // zmi
 int tracker_status = 0;                                                   // status trakera kombinacja uruchomiony / brak fixa / praca
 int speed_kmh = 0;
 char * packet_buffer  = "                                                                         \n";
-//unsigned long time_to_send_data = 0;                                      // pomocnicza zmienna do wspóldzielenia czasu
 unsigned long time_to_get_gps_data = 0;                                   // pomocnicza zmienna do współdzielenia czasu
 unsigned long beacon_interval = 0;                                        // pomocnicza zmienna domyślny timing wysyłki pakietów
 unsigned long time_to_act_led = 0;                                        // pomocnicza zmienna czas do zmiany stanu leda
@@ -76,9 +75,9 @@ void set_packet_interval(){                                               // ust
     calc = constrain(calc,beacon_fast_interval,beacon_slow_interval);
     beacon_interval = calc * 60000;
     sb_time = millis() + 1000;
-    Serial.print(millis()); 
-    Serial.print("-");
-    Serial.println(beacon_interval);
+    //Serial.print(millis()); 
+    //Serial.print("-");
+    //Serial.println(beacon_interval);
   }
 }
 
