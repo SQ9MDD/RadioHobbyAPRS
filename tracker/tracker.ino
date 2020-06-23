@@ -37,6 +37,7 @@ int beacon_slow_interval            = 20;                                 // dł
 int beacon_fast_interval            = 1;                                  // krótki interwał wysyłki ramek w minutach default = 1 range 1 - 60
 int beacon_slow_speed               = 10;                                 // km/h
 int beacon_fast_speed               = 80;                                 // km/h 
+int course_change_trigger           = 15;                                 // turn trigger degree
 unsigned long gps_read_interval     = 5000;                               // msec default 1 sec
 int tx_delay = 400;                                                       // opóznienie pomiedzy załączeniem tx a nadawaniem ramki
 boolean show_sat_number             = true;                               // true/false shows sat number in comment
@@ -57,6 +58,7 @@ boolean show_voltage                = false;                              // tru
 boolean fix_flag = false;
 int voltage = 0;                                                          // zmierzone napiecie
 int speed_kmh = 0;
+int old_course = 0;
 char * packet_buffer  = "                                                                         \n";
 unsigned long time_to_get_gps_data = 0;                                   // 
 unsigned long beacon_interval = 0;                                        // 
@@ -73,7 +75,17 @@ void set_packet_interval(){                                               // ust
   if(millis() >= sb_time){
     int calc = map(speed_kmh,beacon_slow_speed,beacon_fast_speed,beacon_slow_interval,beacon_fast_interval);
     calc = constrain(calc,beacon_fast_interval,beacon_slow_interval);
+
+    int course_deg = int(gps.course.deg()); 
+    int course_change = abs(old_course - course_deg);
+    if((old_course >= 270 && course_deg <=90) || (old_course <= 90 && course_deg >= 270)){
+      course_change = 360 - course_change;
+    }
     beacon_interval = calc * 60000;
+    if(course_change >= course_change_trigger && speed_kmh >= beacon_slow_speed){
+      old_course = course_deg;
+      beacon_interval = 0;
+    }
     sb_time = millis() + 1000;
     /* DEBUG
     Serial.print(millis()); 
