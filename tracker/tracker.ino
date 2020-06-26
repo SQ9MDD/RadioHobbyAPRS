@@ -37,7 +37,7 @@ int beacon_slow_interval            = 20;                                 // dł
 int beacon_fast_interval            = 1;                                  // krótki interwał wysyłki ramek w minutach default = 1 range 1 - 60
 int beacon_slow_speed               = 10;                                 // km/h
 int beacon_fast_speed               = 80;                                 // km/h 
-int course_change_trigger           = 15;                                 // turn trigger degree
+int course_change_trigger           = 30;                                 // min30 max 90 turn trigger degree
 unsigned long gps_read_interval     = 5000;                               // msec default 1 sec
 int tx_delay = 400;                                                       // opóznienie pomiedzy załączeniem tx a nadawaniem ramki
 boolean show_sat_number             = true;                               // true/false shows sat number in comment
@@ -56,6 +56,7 @@ boolean show_voltage                = false;                              // tru
 
 // zmienne pomocnicze wewnętrzne oraz konfiguracja sprzętu
 boolean fix_flag = false;
+boolean send_beacon = false;
 int voltage = 0;                                                          // zmierzone napiecie
 int speed_kmh = 0;
 int old_course = 0;
@@ -75,16 +76,17 @@ void set_packet_interval(){                                               // ust
   if(millis() >= sb_time){
     int calc = map(speed_kmh,beacon_slow_speed,beacon_fast_speed,beacon_slow_interval,beacon_fast_interval);
     calc = constrain(calc,beacon_fast_interval,beacon_slow_interval);
-
+    beacon_interval = calc * 60000;
+    
     int course_deg = int(gps.course.deg()); 
     int course_change = abs(old_course - course_deg);
     if((old_course >= 270 && course_deg <=90) || (old_course <= 90 && course_deg >= 270)){
       course_change = 360 - course_change;
     }
-    beacon_interval = calc * 60000;
+    course_change_trigger = constrain(course_change_trigger,30,90);
     if(course_change >= course_change_trigger && speed_kmh >= beacon_slow_speed){
       old_course = course_deg;
-      beacon_interval = 0;
+      send_beacon = true;
     }
     sb_time = millis() + 1000;
     /* DEBUG
@@ -178,15 +180,16 @@ void make_data(){                                                         //
 
 // obsługa wysyłki danych 
 void send_aprs_packet(){
-  if(millis() >= (last_beacon + beacon_interval)){ 
+  if((millis() >= (last_beacon + beacon_interval))||send_beacon == true){ 
      digitalWrite(ptt_port,LOW);                                          // ON PTT
      delay(tx_delay);                                                     // wait for transceiver to be ready
      gpsSerial.end();                                                     // disable software seriall interrupts before sending frame
      QAPRS.sendData(packet_buffer);                                       // wysyłka pakietu
      gpsSerial.begin(9600);                                               // enable software seriall again
-     Serial.print(packet_buffer);                                       // debug
+     Serial.print(packet_buffer);                                         // debug
      digitalWrite(ptt_port,HIGH);                                         // OFF PTT
      delay(10);                                                           // 
+     send_beacon = false;
      last_beacon = millis(); 
   }
 }
